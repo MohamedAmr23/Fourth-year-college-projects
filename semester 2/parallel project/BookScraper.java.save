@@ -1,0 +1,68 @@
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class BookScraper {
+    private static final String BASE_URL = "https://books.toscrape.com/catalogue/";
+    private static final String OUTPUT_FILE = "books.csv";
+    private static final int NUM_THREADS = 5;
+
+    public static void main(String[] args) {
+        ExecutorService executor = Executors.newFixedThreadPool(NUM_THREADS);
+
+        try (FileWriter writer = new FileWriter(OUTPUT_FILE)) {
+            writer.write("Title,Price,Rating\n");
+
+            int page = 1;
+            while (true) {
+                String url = BASE_URL + "page-" + page + ".html";
+                if (!pageExists(url)) break;
+                executor.execute(new ScraperTask(url, writer));
+                page++;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        executor.shutdown();
+    }
+
+    static boolean pageExists(String url) {
+        try {
+            Document doc = Jsoup.connect(url).get();
+            return doc.select(".product_pod").size() > 0;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    static class ScraperTask implements Runnable {
+        private final String url;
+        private final FileWriter writer;
+
+        public ScraperTask(String url, FileWriter writer) {
+            this.url = url;
+            this.writer = writer;
+        }
+
+        @Override
+        public void run() {
+            try {
+                System.out.println("Scraping: " + url);
+                Document doc = Jsoup.connect(url).get();
+                Elements books = doc.select(".product_pod");
+
+                synchronized (writer) {
+                    for (Element book : books) {
+                        String title = book.select("h3 a").attr("title");
+                        String price = book.select(".price_color").text();
+                        String rating = book.select(".star-rating").attr("class").replace("star-rating", "").tri
+                        writer
+
+
