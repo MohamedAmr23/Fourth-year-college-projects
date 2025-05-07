@@ -1,1 +1,7 @@
 scraping details of book from websites to achieve parallel programming 
+
+-Visits pages of a book website
+
+-Collects book info: title, price, rating
+
+-Stores the data in a CSV file
